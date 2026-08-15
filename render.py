@@ -2,7 +2,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-WIDTH = 900
+WIDTH = 800
 HEIGHT = 480
 MAX_POINTS = 100
 SEGMENTS = 20
