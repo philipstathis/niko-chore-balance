@@ -10,7 +10,7 @@ export default {
       headers: request.headers,
     });
 
-    if (!/\.(jpe?g|png)$/i.test(url.pathname)) {
+    if (!url.pathname.endsWith(".jpeg")) {
       return response;
     }
 
