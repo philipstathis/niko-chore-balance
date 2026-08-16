@@ -117,21 +117,29 @@ def render_display(balance: int, width: int, height: int) -> Image.Image:
 
 
 def write_display_outputs(output: Path, image: Image.Image, name: str) -> None:
-    flat_png = output / f"{name}.png"
-    if flat_png.exists() and flat_png.is_file():
-        flat_png.unlink()
+    png_path = output / f"{name}.png"
+    jpeg_path = output / f"{name}.jpeg"
 
-    png_dir = output / f"{name}.png"
-    png_dir.mkdir(parents=True, exist_ok=True)
+    image.save(png_path, format="PNG")
+    image.convert("L").save(jpeg_path, format="JPEG", quality=95)
 
-    preview_path = png_dir / "preview.png"
-    image.save(preview_path)
 
-    # GitHub Pages serves extensionless files as application/octet-stream.
-    # A directory named display960.png with an index file gives a device URL
-    # ending in .png that still downloads instead of rendering inline.
-    (png_dir / "index").write_bytes(preview_path.read_bytes())
-    (output / name).write_bytes(preview_path.read_bytes())
+def write_headers(output: Path) -> None:
+    (output / "_headers").write_text(
+        """\
+/*.jpeg
+  Content-Disposition: attachment
+  Cache-Control: no-cache
+
+/*.jpg
+  Content-Disposition: attachment
+  Cache-Control: no-cache
+
+/*.png
+  Content-Disposition: attachment
+  Cache-Control: no-cache
+"""
+    )
 
 
 def write_index_html(output: Path) -> None:
@@ -176,34 +184,34 @@ def write_index_html(output: Path) -> None:
     </head>
     <body>
         <h1>Niko's Chore Points</h1>
-        <p>E-ink devices should use the device URLs below. GitHub Pages cannot force downloads on plain <code>.png</code> files, so device URLs use an extensionless <code>index</code> file inside a <code>display960.png/</code> directory, which is served as <code>application/octet-stream</code>.</p>
+        <p>Invisible Computers screens need a <code>.jpeg</code> URL served with <code>Content-Disposition: attachment</code>. GitHub Pages cannot set that header, so enable the orange-cloud proxy on <code>chores.stathis.app</code> and deploy the Cloudflare Worker in <code>cloudflare/</code>.</p>
 
         <div class="display">
             <h2>7.5 inch display (800×480)</h2>
-            <p>Device URL: <a class="device-url" href="display800.png/">display800.png</a> or <a class="device-url" href="display800">display800</a></p>
-            <p>Browser preview: <a href="display800.png/preview.png">display800.png/preview.png</a></p>
-            <img src="display800.png/preview.png" alt="Niko's Chore Points — 800×480" style="width: 800px;">
+            <p>Device URL: <a class="device-url" href="display800.jpeg">display800.jpeg</a></p>
+            <p>Browser preview: <a href="display800.png">display800.png</a></p>
+            <img src="display800.png" alt="Niko's Chore Points — 800×480" style="width: 800px;">
         </div>
 
         <div class="display">
             <h2>Older calendar display (880×528)</h2>
-            <p>Device URL: <a class="device-url" href="display880.png/">display880.png</a> or <a class="device-url" href="display880">display880</a></p>
-            <p>Browser preview: <a href="display880.png/preview.png">display880.png/preview.png</a></p>
-            <img src="display880.png/preview.png" alt="Niko's Chore Points — 880×528" style="width: 880px;">
+            <p>Device URL: <a class="device-url" href="display880.jpeg">display880.jpeg</a></p>
+            <p>Browser preview: <a href="display880.png">display880.png</a></p>
+            <img src="display880.png" alt="Niko's Chore Points — 880×528" style="width: 880px;">
         </div>
 
         <div class="display">
             <h2>10.2 inch display (960×640)</h2>
-            <p>Device URL: <a class="device-url" href="display960.png/">display960.png</a> or <a class="device-url" href="display960">display960</a></p>
-            <p>Browser preview: <a href="display960.png/preview.png">display960.png/preview.png</a></p>
-            <img src="display960.png/preview.png" alt="Niko's Chore Points — 960×640" style="width: 960px;">
+            <p>Device URL: <a class="device-url" href="display960.jpeg">display960.jpeg</a></p>
+            <p>Browser preview: <a href="display960.png">display960.png</a></p>
+            <img src="display960.png" alt="Niko's Chore Points — 960×640" style="width: 960px;">
         </div>
 
         <div class="display">
             <h2>Default (800×480)</h2>
-            <p>Device URL: <a class="device-url" href="display.png/">display.png</a> or <a class="device-url" href="display">display</a></p>
-            <p>Browser preview: <a href="display.png/preview.png">display.png/preview.png</a></p>
-            <img src="display.png/preview.png" alt="Niko's Chore Points — default" style="width: 800px;">
+            <p>Device URL: <a class="device-url" href="display.jpeg">display.jpeg</a></p>
+            <p>Browser preview: <a href="display.png">display.png</a></p>
+            <img src="display.png" alt="Niko's Chore Points — default" style="width: 800px;">
         </div>
     </body>
     </html>
@@ -232,6 +240,7 @@ def main():
         )
 
     write_index_html(output)
+    write_headers(output)
 
 
 if __name__ == "__main__":
