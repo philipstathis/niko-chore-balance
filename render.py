@@ -116,6 +116,10 @@ def render_display(balance: int, width: int, height: int) -> Image.Image:
     )
 
 
+def write_device_download(output: Path, png_path: Path, device_path: Path) -> None:
+    device_path.write_bytes(png_path.read_bytes())
+
+
 def write_index_html(output: Path) -> None:
     (output / "index.html").write_text(
         """
@@ -147,33 +151,44 @@ def write_index_html(output: Path) -> None:
             .display a {
                 color: #0366d6;
             }
+            .device-url {
+                font-family: monospace;
+                background: #f5f5f5;
+                border: 1px solid #ccc;
+                padding: 0.5rem 0.75rem;
+                display: inline-block;
+            }
         </style>
     </head>
     <body>
         <h1>Niko's Chore Points</h1>
-        <p>Preview pages for each e-ink display size. <code>display.png</code> remains the default 800×480 image.</p>
+        <p>Browser previews use <code>.png</code> files. E-ink devices should use the extensionless device URLs below, which GitHub Pages serves as downloads instead of inline images.</p>
 
         <div class="display">
             <h2>7.5 inch display (800×480)</h2>
-            <p><a href="display800.png">display800.png</a></p>
+            <p>Device URL: <a class="device-url" href="display800">display800</a></p>
+            <p>Browser preview: <a href="display800.png">display800.png</a></p>
             <img src="display800.png" alt="Niko's Chore Points — 800×480" style="width: 800px;">
         </div>
 
         <div class="display">
             <h2>Older calendar display (880×528)</h2>
-            <p><a href="display880.png">display880.png</a></p>
+            <p>Device URL: <a class="device-url" href="display880">display880</a></p>
+            <p>Browser preview: <a href="display880.png">display880.png</a></p>
             <img src="display880.png" alt="Niko's Chore Points — 880×528" style="width: 880px;">
         </div>
 
         <div class="display">
             <h2>10.2 inch display (960×640)</h2>
-            <p><a href="display960.png">display960.png</a></p>
+            <p>Device URL: <a class="device-url" href="display960">display960</a></p>
+            <p>Browser preview: <a href="display960.png">display960.png</a></p>
             <img src="display960.png" alt="Niko's Chore Points — 960×640" style="width: 960px;">
         </div>
 
         <div class="display">
             <h2>Default (800×480)</h2>
-            <p><a href="display.png">display.png</a></p>
+            <p>Device URL: <a class="device-url" href="display">display</a></p>
+            <p>Browser preview: <a href="display.png">display.png</a></p>
             <img src="display.png" alt="Niko's Chore Points — default" style="width: 800px;">
         </div>
     </body>
@@ -187,12 +202,17 @@ def main():
 
     output = Path("site")
     output.mkdir(exist_ok=True)
+    (output / ".nojekyll").touch()
 
     # Keep the original default output untouched in behavior (800×480).
-    render_display(balance, BASE_WIDTH, BASE_HEIGHT).save(output / "display.png")
+    default_png = output / "display.png"
+    render_display(balance, BASE_WIDTH, BASE_HEIGHT).save(default_png)
+    write_device_download(output, default_png, output / "display")
 
     for filename, (width, height) in DISPLAYS.items():
-        render_display(balance, width, height).save(output / f"{filename}.png")
+        png_path = output / f"{filename}.png"
+        render_display(balance, width, height).save(png_path)
+        write_device_download(output, png_path, output / filename)
 
     write_index_html(output)
 
