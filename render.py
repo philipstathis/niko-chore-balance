@@ -116,8 +116,22 @@ def render_display(balance: int, width: int, height: int) -> Image.Image:
     )
 
 
-def write_device_download(output: Path, png_path: Path, device_path: Path) -> None:
-    device_path.write_bytes(png_path.read_bytes())
+def write_display_outputs(output: Path, image: Image.Image, name: str) -> None:
+    flat_png = output / f"{name}.png"
+    if flat_png.exists() and flat_png.is_file():
+        flat_png.unlink()
+
+    png_dir = output / f"{name}.png"
+    png_dir.mkdir(parents=True, exist_ok=True)
+
+    preview_path = png_dir / "preview.png"
+    image.save(preview_path)
+
+    # GitHub Pages serves extensionless files as application/octet-stream.
+    # A directory named display960.png with an index file gives a device URL
+    # ending in .png that still downloads instead of rendering inline.
+    (png_dir / "index").write_bytes(preview_path.read_bytes())
+    (output / name).write_bytes(preview_path.read_bytes())
 
 
 def write_index_html(output: Path) -> None:
@@ -162,34 +176,34 @@ def write_index_html(output: Path) -> None:
     </head>
     <body>
         <h1>Niko's Chore Points</h1>
-        <p>Browser previews use <code>.png</code> files. E-ink devices should use the extensionless device URLs below, which GitHub Pages serves as downloads instead of inline images.</p>
+        <p>E-ink devices should use the device URLs below. GitHub Pages cannot force downloads on plain <code>.png</code> files, so device URLs use an extensionless <code>index</code> file inside a <code>display960.png/</code> directory, which is served as <code>application/octet-stream</code>.</p>
 
         <div class="display">
             <h2>7.5 inch display (800×480)</h2>
-            <p>Device URL: <a class="device-url" href="display800">display800</a></p>
-            <p>Browser preview: <a href="display800.png">display800.png</a></p>
-            <img src="display800.png" alt="Niko's Chore Points — 800×480" style="width: 800px;">
+            <p>Device URL: <a class="device-url" href="display800.png/">display800.png</a> or <a class="device-url" href="display800">display800</a></p>
+            <p>Browser preview: <a href="display800.png/preview.png">display800.png/preview.png</a></p>
+            <img src="display800.png/preview.png" alt="Niko's Chore Points — 800×480" style="width: 800px;">
         </div>
 
         <div class="display">
             <h2>Older calendar display (880×528)</h2>
-            <p>Device URL: <a class="device-url" href="display880">display880</a></p>
-            <p>Browser preview: <a href="display880.png">display880.png</a></p>
-            <img src="display880.png" alt="Niko's Chore Points — 880×528" style="width: 880px;">
+            <p>Device URL: <a class="device-url" href="display880.png/">display880.png</a> or <a class="device-url" href="display880">display880</a></p>
+            <p>Browser preview: <a href="display880.png/preview.png">display880.png/preview.png</a></p>
+            <img src="display880.png/preview.png" alt="Niko's Chore Points — 880×528" style="width: 880px;">
         </div>
 
         <div class="display">
             <h2>10.2 inch display (960×640)</h2>
-            <p>Device URL: <a class="device-url" href="display960">display960</a></p>
-            <p>Browser preview: <a href="display960.png">display960.png</a></p>
-            <img src="display960.png" alt="Niko's Chore Points — 960×640" style="width: 960px;">
+            <p>Device URL: <a class="device-url" href="display960.png/">display960.png</a> or <a class="device-url" href="display960">display960</a></p>
+            <p>Browser preview: <a href="display960.png/preview.png">display960.png/preview.png</a></p>
+            <img src="display960.png/preview.png" alt="Niko's Chore Points — 960×640" style="width: 960px;">
         </div>
 
         <div class="display">
             <h2>Default (800×480)</h2>
-            <p>Device URL: <a class="device-url" href="display">display</a></p>
-            <p>Browser preview: <a href="display.png">display.png</a></p>
-            <img src="display.png" alt="Niko's Chore Points — default" style="width: 800px;">
+            <p>Device URL: <a class="device-url" href="display.png/">display.png</a> or <a class="device-url" href="display">display</a></p>
+            <p>Browser preview: <a href="display.png/preview.png">display.png/preview.png</a></p>
+            <img src="display.png/preview.png" alt="Niko's Chore Points — default" style="width: 800px;">
         </div>
     </body>
     </html>
@@ -204,15 +218,18 @@ def main():
     output.mkdir(exist_ok=True)
     (output / ".nojekyll").touch()
 
-    # Keep the original default output untouched in behavior (800×480).
-    default_png = output / "display.png"
-    render_display(balance, BASE_WIDTH, BASE_HEIGHT).save(default_png)
-    write_device_download(output, default_png, output / "display")
+    write_display_outputs(
+        output,
+        render_display(balance, BASE_WIDTH, BASE_HEIGHT),
+        "display",
+    )
 
     for filename, (width, height) in DISPLAYS.items():
-        png_path = output / f"{filename}.png"
-        render_display(balance, width, height).save(png_path)
-        write_device_download(output, png_path, output / filename)
+        write_display_outputs(
+            output,
+            render_display(balance, width, height),
+            filename,
+        )
 
     write_index_html(output)
 
