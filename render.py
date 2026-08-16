@@ -11,6 +11,7 @@ FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf"
 
 DISPLAYS = {
     "display800": (800, 480),
+    "display880": (880, 528),
     "display960": (960, 640),
 }
 
@@ -156,6 +157,12 @@ def write_index_html(output: Path) -> None:
             <h2>7.5 inch display (800×480)</h2>
             <p><a href="display800.png">display800.png</a></p>
             <img src="display800.png" alt="Niko's Chore Points — 800×480" style="width: 800px;">
+        </div>
+
+        <div class="display">
+            <h2>Older calendar display (880×528)</h2>
+            <p><a href="display880.png">display880.png</a></p>
+            <img src="display880.png" alt="Niko's Chore Points — 880×528" style="width: 880px;">
         </div>
 
         <div class="display">
