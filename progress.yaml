@@ -13,15 +13,15 @@ chores:
   - id: sharing
     label: Sharing & friends
     points: 4
-  - id: tidy
-    label: Tidy toys
-    points: 1
-  - id: eating
-    label: Eat by myself
-    points: 2
   - id: listening
     label: Listen to grown-ups
     points: 3
+  - id: eating
+    label: Eat by myself
+    points: 2
+  - id: tidy
+    label: Tidy toys
+    points: 1
 
 days:
   - date: 2026-08-17
