@@ -5,7 +5,7 @@ timezone: America/New_York
 
 chores:
   - id: potty
-    label: No Potty Accidents all day
+    label: Use Potty on time
     points: 6
   - id: quiet_voice
     label: Quiet Voice all day
