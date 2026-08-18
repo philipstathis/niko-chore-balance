@@ -33,7 +33,10 @@ jobs:
           python-version: '3.13'
 
       - name: Install dependencies
-        run: pip install pillow
+        run: pip install pillow pyyaml pytest tzdata
+
+      - name: Run tests
+        run: python -m pytest -q
 
       - name: Generate display image
         run: python render.py
