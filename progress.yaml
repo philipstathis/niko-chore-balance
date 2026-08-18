@@ -1,27 +1,27 @@
 goal: 150
-prize: Lego set
+prize: Mosasaurus Green Lego set
 starting_balance: 16
 timezone: America/New_York
 
 chores:
   - id: potty
-    label: Potty all day
+    label: No Potty Accidents all day
     points: 6
   - id: quiet_voice
-    label: Quiet voice all day
+    label: Quiet Voice all day
     points: 5
   - id: sharing
     label: Sharing & friends
     points: 4
   - id: tidy
     label: Tidy toys
-    points: 3
+    points: 1
   - id: eating
     label: Eat by myself
     points: 2
   - id: listening
     label: Listen to grown-ups
-    points: 1
+    points: 3
 
 days:
   - date: 2026-08-17
