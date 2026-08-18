@@ -1,4 +1,5 @@
 from datetime import date
+from pathlib import Path
 
 import pytest
 
@@ -7,9 +8,57 @@ from progress import (
     Chore,
     DayRecord,
     Progress,
+    ProgressError,
+    load_progress,
     todays_checks,
     total_points,
 )
+
+CHORES_YAML = """
+chores:
+  - id: potty
+    label: Potty all day
+    points: {potty_points}
+  - id: quiet_voice
+    label: Quiet voice all day
+    points: 5
+  - id: sharing
+    label: Sharing & friends
+    points: 4
+  - id: tidy
+    label: Tidy toys
+    points: 3
+  - id: eating
+    label: Eat by myself
+    points: 2
+  - id: listening
+    label: Listen to grown-ups
+    points: 1
+"""
+
+
+def _write_progress(
+    tmp_path: Path,
+    *,
+    days: str = "days: []",
+    starting_balance: int = 16,
+    potty_points: int = 6,
+) -> Path:
+    path = tmp_path / "progress.yaml"
+    path.write_text(
+        (
+            f"goal: 150\n"
+            f"prize: Lego set\n"
+            f"starting_balance: {starting_balance}\n"
+            f"timezone: America/New_York\n"
+            + CHORES_YAML.format(potty_points=potty_points)
+            + days
+            + "\n"
+        ),
+        encoding="utf-8",
+    )
+    return path
+
 
 
 def _chores() -> tuple[Chore, ...]:
@@ -101,3 +150,89 @@ def test_todays_checks_uses_matching_date():
     assert checks["potty"] is True
     assert checks["tidy"] is True
     assert checks["quiet_voice"] is False
+
+
+def test_load_progress_reads_yaml(tmp_path: Path):
+    path = _write_progress(
+        tmp_path,
+        days="""
+days:
+  - date: 2026-08-17
+    potty: true
+    quiet_voice: false
+    sharing: true
+    tidy: true
+    eating: true
+    listening: true
+""",
+    )
+    progress = load_progress(path)
+    assert progress.starting_balance == 16
+    assert progress.chores[0].label == "Potty all day"
+    assert total_points(progress) == 32
+    assert todays_checks(progress, date(2026, 8, 17))["potty"] is True
+    assert todays_checks(progress, date(2026, 8, 17))["quiet_voice"] is False
+
+
+def test_missing_file_fails(tmp_path: Path):
+    with pytest.raises(ProgressError):
+        load_progress(tmp_path / "missing.yaml")
+
+
+def test_bad_yaml_fails(tmp_path: Path):
+    path = tmp_path / "progress.yaml"
+    path.write_text(": this is not: valid: yaml: [\n", encoding="utf-8")
+    with pytest.raises(ProgressError):
+        load_progress(path)
+
+
+def test_wrong_chore_list_fails(tmp_path: Path):
+    path = _write_progress(tmp_path, potty_points=99)
+    with pytest.raises(ProgressError):
+        load_progress(path)
+
+
+def test_starting_balance_out_of_range_fails(tmp_path: Path):
+    path = _write_progress(tmp_path, starting_balance=200)
+    with pytest.raises(ProgressError):
+        load_progress(path)
+
+
+def test_duplicate_date_fails(tmp_path: Path):
+    path = _write_progress(
+        tmp_path,
+        days="""
+days:
+  - date: 2026-08-17
+    potty: true
+  - date: 2026-08-17
+    tidy: true
+""",
+    )
+    with pytest.raises(ProgressError):
+        load_progress(path)
+
+
+def test_unknown_day_key_fails(tmp_path: Path):
+    path = _write_progress(
+        tmp_path,
+        days="""
+days:
+  - date: 2026-08-17
+    extra: true
+""",
+    )
+    with pytest.raises(ProgressError):
+        load_progress(path)
+
+
+def test_missing_date_fails(tmp_path: Path):
+    path = _write_progress(
+        tmp_path,
+        days="""
+days:
+  - potty: true
+""",
+    )
+    with pytest.raises(ProgressError):
+        load_progress(path)
