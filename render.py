@@ -2,18 +2,15 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
 
-BASE_WIDTH = 800
-BASE_HEIGHT = 480
+DESIGN_WIDTH = 800
+DESIGN_HEIGHT = 480
+DISPLAY_WIDTH = 960
+DISPLAY_HEIGHT = 640
 MAX_POINTS = 100
 SEGMENTS = 20
+OUTPUT_FILENAME = "display960.jpeg"
 
 FONT_PATH = "/usr/share/fonts/truetype/dejavu/DejaVuSansMono-Bold.ttf"
-
-DISPLAYS = {
-    "display800": (800, 480),
-    "display880": (880, 528),
-    "display960": (960, 640),
-}
 
 
 def load_balance() -> int:
@@ -43,27 +40,27 @@ def draw_centered(
     draw.text((x, y), text, font=font, fill=0)
 
 
-def render_display(balance: int, width: int, height: int) -> Image.Image:
+def render_display(balance: int) -> Image.Image:
     title_font = ImageFont.truetype(
         FONT_PATH,
-        scale(36, width, BASE_WIDTH),
+        scale(36, DISPLAY_WIDTH, DESIGN_WIDTH),
     )
     value_font = ImageFont.truetype(
         FONT_PATH,
-        scale(66, width, BASE_WIDTH),
+        scale(66, DISPLAY_WIDTH, DESIGN_WIDTH),
     )
     bar_font = ImageFont.truetype(
         FONT_PATH,
-        scale(36, width, BASE_WIDTH),
+        scale(36, DISPLAY_WIDTH, DESIGN_WIDTH),
     )
     percentage_font = ImageFont.truetype(
         FONT_PATH,
-        scale(30, width, BASE_WIDTH),
+        scale(30, DISPLAY_WIDTH, DESIGN_WIDTH),
     )
 
     image = Image.new(
         "L",
-        (width, height),
+        (DISPLAY_WIDTH, DISPLAY_HEIGHT),
         color=255,
     )
 
@@ -73,16 +70,16 @@ def render_display(balance: int, width: int, height: int) -> Image.Image:
         draw,
         "Niko's Chore Points",
         title_font,
-        scale(55, height, BASE_HEIGHT),
-        width,
+        scale(55, DISPLAY_HEIGHT, DESIGN_HEIGHT),
+        DISPLAY_WIDTH,
     )
 
     draw_centered(
         draw,
         f"{balance}/{MAX_POINTS}",
         value_font,
-        scale(145, height, BASE_HEIGHT),
-        width,
+        scale(145, DISPLAY_HEIGHT, DESIGN_HEIGHT),
+        DISPLAY_WIDTH,
     )
 
     filled_segments = balance * SEGMENTS // MAX_POINTS
@@ -98,16 +95,16 @@ def render_display(balance: int, width: int, height: int) -> Image.Image:
         draw,
         progress_bar,
         bar_font,
-        scale(260, height, BASE_HEIGHT),
-        width,
+        scale(260, DISPLAY_HEIGHT, DESIGN_HEIGHT),
+        DISPLAY_WIDTH,
     )
 
     draw_centered(
         draw,
         f"{balance}%",
         percentage_font,
-        scale(350, height, BASE_HEIGHT),
-        width,
+        scale(350, DISPLAY_HEIGHT, DESIGN_HEIGHT),
+        DISPLAY_WIDTH,
     )
 
     return image.point(
@@ -116,26 +113,10 @@ def render_display(balance: int, width: int, height: int) -> Image.Image:
     )
 
 
-def write_display_outputs(output: Path, image: Image.Image, name: str) -> None:
-    png_path = output / f"{name}.png"
-    jpeg_path = output / f"{name}.jpeg"
-
-    image.save(png_path, format="PNG")
-    image.convert("L").save(jpeg_path, format="JPEG", quality=95)
-
-
 def write_headers(output: Path) -> None:
     (output / "_headers").write_text(
-        """\
-/*.jpeg
-  Content-Disposition: attachment
-  Cache-Control: no-cache
-
-/*.jpg
-  Content-Disposition: attachment
-  Cache-Control: no-cache
-
-/*.png
+        f"""\
+/{OUTPUT_FILENAME}
   Content-Disposition: attachment
   Cache-Control: no-cache
 """
@@ -144,75 +125,35 @@ def write_headers(output: Path) -> None:
 
 def write_index_html(output: Path) -> None:
     (output / "index.html").write_text(
-        """
+        f"""
     <!doctype html>
     <html>
     <head>
         <title>Niko's Chore Points</title>
         <style>
-            body {
+            body {{
                 margin: 40px;
                 background: #ddd;
                 font-family: sans-serif;
-            }
-            img {
+            }}
+            img {{
                 max-width: 100%;
                 border: 1px solid #999;
-            }
-            .display {
-                margin-bottom: 2rem;
-            }
-            .display h2 {
-                margin: 0 0 0.5rem;
-                font-size: 1.1rem;
-            }
-            .display p {
-                margin: 0 0 0.75rem;
-                color: #444;
-            }
-            .display a {
-                color: #0366d6;
-            }
-            .device-url {
+            }}
+            .device-url {{
                 font-family: monospace;
                 background: #f5f5f5;
                 border: 1px solid #ccc;
                 padding: 0.5rem 0.75rem;
                 display: inline-block;
-            }
+            }}
         </style>
     </head>
     <body>
         <h1>Niko's Chore Points</h1>
-        <p>Invisible Computers screens need a <code>.jpeg</code> URL served with <code>Content-Disposition: attachment</code>. GitHub Pages cannot set that header, so enable the orange-cloud proxy on <code>chores.stathis.app</code> and deploy the Cloudflare Worker in <code>cloudflare/</code>.</p>
-
-        <div class="display">
-            <h2>7.5 inch display (800×480)</h2>
-            <p>Device URL: <a class="device-url" href="display800.jpeg">display800.jpeg</a></p>
-            <p>Browser preview: <a href="display800.png">display800.png</a></p>
-            <img src="display800.png" alt="Niko's Chore Points — 800×480" style="width: 800px;">
-        </div>
-
-        <div class="display">
-            <h2>Older calendar display (880×528)</h2>
-            <p>Device URL: <a class="device-url" href="display880.jpeg">display880.jpeg</a></p>
-            <p>Browser preview: <a href="display880.png">display880.png</a></p>
-            <img src="display880.png" alt="Niko's Chore Points — 880×528" style="width: 880px;">
-        </div>
-
-        <div class="display">
-            <h2>10.2 inch display (960×640)</h2>
-            <p>Device URL: <a class="device-url" href="display960.jpeg">display960.jpeg</a></p>
-            <p>Browser preview: <a href="display960.png">display960.png</a></p>
-            <img src="display960.png" alt="Niko's Chore Points — 960×640" style="width: 960px;">
-        </div>
-
-        <div class="display">
-            <h2>Default (800×480)</h2>
-            <p>Device URL: <a class="device-url" href="display.jpeg">display.jpeg</a></p>
-            <p>Browser preview: <a href="display.png">display.png</a></p>
-            <img src="display.png" alt="Niko's Chore Points — default" style="width: 800px;">
-        </div>
+        <p>10.2 inch Invisible screen (960×640)</p>
+        <p>Device URL: <a class="device-url" href="{OUTPUT_FILENAME}">{OUTPUT_FILENAME}</a></p>
+        <img src="{OUTPUT_FILENAME}" alt="Niko's Chore Points — 960×640" style="width: 960px;">
     </body>
     </html>
     """.strip()
@@ -226,18 +167,8 @@ def main():
     output.mkdir(exist_ok=True)
     (output / ".nojekyll").touch()
 
-    write_display_outputs(
-        output,
-        render_display(balance, BASE_WIDTH, BASE_HEIGHT),
-        "display",
-    )
-
-    for filename, (width, height) in DISPLAYS.items():
-        write_display_outputs(
-            output,
-            render_display(balance, width, height),
-            filename,
-        )
+    image = render_display(balance)
+    image.convert("L").save(output / OUTPUT_FILENAME, format="JPEG", quality=95)
 
     write_index_html(output)
     write_headers(output)
