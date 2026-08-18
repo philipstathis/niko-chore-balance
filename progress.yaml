@@ -23,4 +23,11 @@ chores:
     label: Listen to grown-ups
     points: 1
 
-days: []
+days:
+  - date: 2026-08-17
+    potty: false
+    quiet_voice: false
+    sharing: true
+    tidy: false
+    eating: true
+    listening: true
