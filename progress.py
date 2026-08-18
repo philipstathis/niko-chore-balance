@@ -5,16 +5,6 @@ from zoneinfo import ZoneInfo
 
 import yaml
 
-EXPECTED_CHORES: tuple[tuple[str, int], ...] = (
-    ("potty", 6),
-    ("quiet_voice", 5),
-    ("sharing", 4),
-    ("tidy", 3),
-    ("eating", 2),
-    ("listening", 1),
-)
-ALLOWED_DAY_KEYS = {"date"} | {chore_id for chore_id, _ in EXPECTED_CHORES}
-
 
 class ProgressError(ValueError):
     """Invalid progress.yaml."""
@@ -96,7 +86,7 @@ def load_progress(path: Path) -> Progress:
     if not isinstance(timezone, str) or not timezone:
         raise ProgressError("timezone must be a non-empty string")
 
-    days = _parse_days(data.get("days"))
+    days = _parse_days(data.get("days"), tuple(chore.id for chore in chores))
     return Progress(
         goal=goal,
         prize=prize,
@@ -108,22 +98,26 @@ def load_progress(path: Path) -> Progress:
 
 
 def _parse_chores(raw: object) -> tuple[Chore, ...]:
-    if not isinstance(raw, list) or len(raw) != len(EXPECTED_CHORES):
-        raise ProgressError("chores must be the six expected chores in order")
+    if not isinstance(raw, list) or not raw:
+        raise ProgressError("chores must be a non-empty list")
 
     chores: list[Chore] = []
-    for index, expected in enumerate(EXPECTED_CHORES):
-        expected_id, expected_points = expected
-        item = raw[index]
+    seen_ids: set[str] = set()
+    for item in raw:
         if not isinstance(item, dict):
             raise ProgressError("each chore must be a mapping")
         chore_id = item.get("id")
         points = item.get("points")
         label = item.get("label")
-        if chore_id != expected_id or points != expected_points:
-            raise ProgressError("chores must match expected ids and points in order")
+        if not isinstance(chore_id, str) or not chore_id:
+            raise ProgressError("each chore needs an id")
+        if chore_id in seen_ids:
+            raise ProgressError(f"duplicate chore id: {chore_id}")
         if not isinstance(label, str) or not label:
             raise ProgressError("each chore needs a label")
+        if not isinstance(points, int) or points < 1:
+            raise ProgressError("each chore needs a positive point value")
+        seen_ids.add(chore_id)
         chores.append(Chore(id=chore_id, label=label, points=points))
     return tuple(chores)
 
@@ -141,12 +135,13 @@ def _parse_date(value: object) -> date:
     raise ProgressError("date must be YYYY-MM-DD")
 
 
-def _parse_days(raw: object) -> tuple[DayRecord, ...]:
+def _parse_days(raw: object, chore_ids: tuple[str, ...]) -> tuple[DayRecord, ...]:
     if raw is None:
         raw = []
     if not isinstance(raw, list):
         raise ProgressError("days must be a list")
 
+    allowed_keys = {"date"} | set(chore_ids)
     days: list[DayRecord] = []
     seen: set[date] = set()
     for item in raw:
@@ -154,7 +149,7 @@ def _parse_days(raw: object) -> tuple[DayRecord, ...]:
             raise ProgressError("each day must be a mapping")
         if "date" not in item:
             raise ProgressError("each day needs a date")
-        unknown = set(item) - ALLOWED_DAY_KEYS
+        unknown = set(item) - allowed_keys
         if unknown:
             raise ProgressError(f"unknown day key: {sorted(unknown)[0]}")
         day_date = _parse_date(item["date"])
@@ -162,7 +157,7 @@ def _parse_days(raw: object) -> tuple[DayRecord, ...]:
             raise ProgressError(f"duplicate date: {day_date.isoformat()}")
         seen.add(day_date)
         checks: dict[str, bool] = {}
-        for chore_id, _ in EXPECTED_CHORES:
+        for chore_id in chore_ids:
             value = item.get(chore_id, False)
             if not isinstance(value, bool):
                 raise ProgressError(f"{chore_id} must be true or false")

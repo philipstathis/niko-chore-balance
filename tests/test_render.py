@@ -3,23 +3,17 @@ from pathlib import Path
 
 from PIL import Image
 
-from progress import EXPECTED_CHORES, Chore, Progress
+from progress import Chore, Progress
 from render import OUTPUT_FILENAME, main, render_display
 
-LABELS = (
-    "Potty all day",
-    "Quiet voice all day",
-    "Sharing & friends",
-    "Tidy toys",
-    "Eat by myself",
-    "Listen to grown-ups",
-)
-
-
 def _progress(starting_balance: int = 16) -> Progress:
-    chores = tuple(
-        Chore(id=chore_id, label=label, points=points)
-        for (chore_id, points), label in zip(EXPECTED_CHORES, LABELS)
+    chores = (
+        Chore(id="potty", label="Potty all day", points=6),
+        Chore(id="quiet_voice", label="Quiet voice all day", points=5),
+        Chore(id="sharing", label="Sharing & friends", points=4),
+        Chore(id="tidy", label="Tidy toys", points=3),
+        Chore(id="eating", label="Eat by myself", points=2),
+        Chore(id="listening", label="Listen to grown-ups", points=1),
     )
     return Progress(
         goal=150,

@@ -4,7 +4,6 @@ from pathlib import Path
 import pytest
 
 from progress import (
-    EXPECTED_CHORES,
     Chore,
     DayRecord,
     Progress,
@@ -12,6 +11,15 @@ from progress import (
     load_progress,
     todays_checks,
     total_points,
+)
+
+SAMPLE_CHORES: tuple[tuple[str, int], ...] = (
+    ("potty", 6),
+    ("quiet_voice", 5),
+    ("sharing", 4),
+    ("tidy", 3),
+    ("eating", 2),
+    ("listening", 1),
 )
 
 CHORES_YAML = """
@@ -64,12 +72,12 @@ def _write_progress(
 def _chores() -> tuple[Chore, ...]:
     return tuple(
         Chore(id=chore_id, label=chore_id, points=points)
-        for chore_id, points in EXPECTED_CHORES
+        for chore_id, points in SAMPLE_CHORES
     )
 
 
 def _checks(**earned: bool) -> dict[str, bool]:
-    checks = {chore_id: False for chore_id, _ in EXPECTED_CHORES}
+    checks = {chore_id: False for chore_id, _ in SAMPLE_CHORES}
     checks.update(earned)
     return checks
 
@@ -138,7 +146,7 @@ def test_omitted_chore_counts_as_not_earned():
 
 def test_todays_checks_empty_when_no_row():
     checks = todays_checks(_progress(), date(2026, 8, 17))
-    assert checks == {chore_id: False for chore_id, _ in EXPECTED_CHORES}
+    assert checks == {chore_id: False for chore_id, _ in SAMPLE_CHORES}
 
 
 def test_todays_checks_uses_matching_date():
@@ -186,8 +194,34 @@ def test_bad_yaml_fails(tmp_path: Path):
         load_progress(path)
 
 
-def test_wrong_chore_list_fails(tmp_path: Path):
+def test_yaml_chores_can_change_points_labels_and_order(tmp_path: Path):
     path = _write_progress(tmp_path, potty_points=99)
+    progress = load_progress(path)
+    assert progress.chores[0].id == "potty"
+    assert progress.chores[0].points == 99
+    assert progress.chores[0].label == "Potty all day"
+
+
+def test_duplicate_chore_id_fails(tmp_path: Path):
+    path = tmp_path / "progress.yaml"
+    path.write_text(
+        """
+goal: 150
+prize: Lego set
+starting_balance: 16
+timezone: America/New_York
+chores:
+  - id: potty
+    label: Potty
+    points: 6
+  - id: potty
+    label: Also potty
+    points: 1
+days: []
+""".strip()
+        + "\n",
+        encoding="utf-8",
+    )
     with pytest.raises(ProgressError):
         load_progress(path)
 
