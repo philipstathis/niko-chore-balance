@@ -38,3 +38,10 @@ days:
     tidy: true
     eating: true
     listening: false
+  - date: 2026-08-19
+    potty: true
+    quiet_voice: true
+    sharing: false
+    tidy: false
+    eating: true
+    listening: true
