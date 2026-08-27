@@ -61,8 +61,15 @@ days:
     tidy: true
   - date: 2026-08-25
     potty: false
+    quiet_voice: false
+    sharing: false
+    listening: false
+    eating: false
+    tidy: false
+  - date: 2026-08-26
+    potty: true
     quiet_voice: true
     sharing: false
-    listening: true
+    listening: false
     eating: false
     tidy: false
