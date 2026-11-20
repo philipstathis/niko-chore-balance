@@ -101,3 +101,10 @@ days:
     listening: false
     eating: false
     tidy: false
+  - date: 2026-11-19
+    potty: false
+    quiet_voice: false
+    sharing: false
+    listening: true
+    eating: true
+    tidy: true
